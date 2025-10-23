@@ -1,0 +1,263 @@
+/**
+ * Estilos para el plugin Uraweb
+ */
+
+.uraweb-filters {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.uraweb-filters h3 {
+    margin-top: 0;
+    color: #23282d;
+}
+
+.uraweb-stats {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.uraweb-stat-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 15px;
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.uraweb-stat-card h4 {
+    margin: 0 0 10px 0;
+    color: #23282d;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.uraweb-stat-card .stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #0073aa;
+}
+
+.uraweb-stat-card .stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.uraweb-table {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.uraweb-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.uraweb-table th {
+    background: #f1f1f1;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid #ccd0d4;
+}
+
+.uraweb-table td {
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.uraweb-table tr:hover {
+    background: #f9f9f9;
+}
+
+.uraweb-status-active {
+    color: #46b450;
+    font-weight: 600;
+}
+
+.uraweb-status-deleted {
+    color: #dc3232;
+    font-weight: 600;
+}
+
+.uraweb-loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.uraweb-loading::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: uraweb-spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes uraweb-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.uraweb-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 9999;
+    display: none;
+}
+
+.uraweb-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 90%;
+    max-height: 90%;
+    overflow: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.uraweb-modal h3 {
+    margin-top: 0;
+    color: #23282d;
+    border-bottom: 1px solid #ccd0d4;
+    padding-bottom: 10px;
+}
+
+.uraweb-details {
+    margin: 20px 0;
+}
+
+.uraweb-details h4 {
+    color: #0073aa;
+    margin: 15px 0 5px 0;
+}
+
+.uraweb-details table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+}
+
+.uraweb-details table th,
+.uraweb-details table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.uraweb-details table th {
+    background: #f9f9f9;
+    font-weight: 600;
+    width: 30%;
+}
+
+.uraweb-error {
+    background: #fff2f2;
+    border: 1px solid #dc3232;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 20px 0;
+    color: #dc3232;
+}
+
+.uraweb-success {
+    background: #f0f8ff;
+    border: 1px solid #0073aa;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 20px 0;
+    color: #0073aa;
+}
+
+.uraweb-no-results {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+}
+
+.uraweb-no-results::before {
+    content: '📄';
+    font-size: 48px;
+    display: block;
+    margin-bottom: 15px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .uraweb-stats {
+        flex-direction: column;
+    }
+    
+    .uraweb-stat-card {
+        min-width: 100%;
+    }
+    
+    .uraweb-table {
+        overflow-x: auto;
+    }
+    
+    .uraweb-modal-content {
+        max-width: 95%;
+        padding: 20px;
+    }
+}
+
+/* Botones personalizados */
+.uraweb-btn {
+    background: #0073aa;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.uraweb-btn:hover {
+    background: #005a87;
+}
+
+.uraweb-btn-secondary {
+    background: #6c757d;
+}
+
+.uraweb-btn-secondary:hover {
+    background: #545b62;
+}
+
+.uraweb-btn-danger {
+    background: #dc3545;
+}
+
+.uraweb-btn-danger:hover {
+    background: #c82333;
+}
