@@ -21,6 +21,8 @@ define('URAWEB_VERSION', '1.0.0');
 // Incluir archivos necesarios
 require_once URAWEB_PLUGIN_PATH . 'includes/class-uraweb-admin.php';
 require_once URAWEB_PLUGIN_PATH . 'includes/class-uraweb-api.php';
+require_once URAWEB_PLUGIN_PATH . 'includes/class-uraweb-sales.php';
+require_once URAWEB_PLUGIN_PATH . 'includes/class-uraweb-products.php';
 
 // Inicializar el plugin
 function uraweb_init() {

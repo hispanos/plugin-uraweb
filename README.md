@@ -135,7 +135,9 @@ interface LocationDetails {
 
 - `index.php` - Archivo principal del plugin
 - `includes/class-uraweb-admin.php` - Manejo del admin y menús
-- `includes/class-uraweb-api.php` - Comunicación con la API
+- `includes/class-uraweb-api.php` - Clase base para comunicación con la API
+- `includes/class-uraweb-sales.php` - Manejo específico de ventas/facturas
+- `includes/class-uraweb-products.php` - Manejo específico de productos
 - `assets/uraweb-admin.css` - Estilos del plugin
 
 ## Requisitos

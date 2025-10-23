@@ -297,8 +297,8 @@ class Uraweb_Admin {
         $start_date = sanitize_text_field($_POST['start_date']);
         $end_date = sanitize_text_field($_POST['end_date']);
         
-        $api = new Uraweb_API();
-        $invoices = $api->get_invoices($start_date, $end_date);
+        $sales = new Uraweb_Sales();
+        $invoices = $sales->get_invoices($start_date, $end_date);
         
         if (is_wp_error($invoices)) {
             echo '<p style="color: red;">Error: ' . $invoices->get_error_message() . '</p>';
@@ -327,8 +327,8 @@ class Uraweb_Admin {
         $category = sanitize_text_field($_POST['category']);
         $manufacturer = sanitize_text_field($_POST['manufacturer']);
         
-        $api = new Uraweb_API();
-        $products = $api->get_products($search_term, $category, $manufacturer);
+        $products_api = new Uraweb_Products();
+        $products = $products_api->get_products($search_term, $category, $manufacturer);
         
         if (is_wp_error($products)) {
             echo '<p style="color: red;">Error: ' . $products->get_error_message() . '</p>';
@@ -348,8 +348,8 @@ class Uraweb_Admin {
             return;
         }
         
-        $api = new Uraweb_API();
-        $stats = $api->get_invoice_stats($invoices);
+        $sales = new Uraweb_Sales();
+        $stats = $sales->get_invoice_stats($invoices);
         
         ?>
         <div class="uraweb-stats">
@@ -492,8 +492,8 @@ class Uraweb_Admin {
             return;
         }
         
-        $api = new Uraweb_API();
-        $stats = $api->get_product_stats($products);
+        $products_api = new Uraweb_Products();
+        $stats = $products_api->get_product_stats($products);
         
         ?>
         <div class="uraweb-stats">
