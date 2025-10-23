@@ -15,6 +15,11 @@ Este plugin permite consultar facturas y productos desde una API externa y mostr
 - **Inventario**: Visualización del stock por ubicación para productos
 - **Diseño Responsivo**: Interfaz adaptada para diferentes tamaños de pantalla
 
+##Screenshots
+<img width="1074" height="359" alt="image" src="https://github.com/user-attachments/assets/fcd37906-0b03-4a03-9ea5-00ad3b67288a" />
+<img width="1597" height="723" alt="image" src="https://github.com/user-attachments/assets/1a1cf6d8-33e8-419d-aa10-afe9d06b99e6" />
+<img width="1587" height="753" alt="image" src="https://github.com/user-attachments/assets/90ca68e2-3f08-4385-a9f3-cba570e4927b" />
+
 ## Instalación
 
 1. Sube la carpeta `uraweb` al directorio `/wp-content/plugins/`
