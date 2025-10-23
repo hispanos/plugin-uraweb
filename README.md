@@ -2,15 +2,17 @@
 
 ## Descripción
 
-Este plugin permite consultar facturas desde una API externa y mostrarlas en el dashboard de WordPress. Está diseñado específicamente para integrar con el sistema de facturación de Uraweb.
+Este plugin permite consultar facturas y productos desde una API externa y mostrarlas en el dashboard de WordPress. Está diseñado específicamente para integrar con el sistema de facturación de Uraweb.
 
 ## Características
 
 - **Menú del Dashboard**: Nuevo menú "Facturas" en el admin de WordPress
 - **Configuración**: Página de configuración para URL del API y API Key
 - **Consulta de Facturas**: Interfaz para buscar facturas por rango de fechas
-- **Estadísticas**: Muestra estadísticas de las facturas encontradas
-- **Detalles Completos**: Modal con información detallada de cada factura
+- **Consulta de Productos**: Interfaz para buscar productos con filtros avanzados
+- **Estadísticas**: Muestra estadísticas de facturas y productos encontrados
+- **Detalles Completos**: Modales con información detallada de facturas y productos
+- **Inventario**: Visualización del stock por ubicación para productos
 - **Diseño Responsivo**: Interfaz adaptada para diferentes tamaños de pantalla
 
 ## Instalación
@@ -22,7 +24,9 @@ Este plugin permite consultar facturas desde una API externa y mostrarlas en el 
 ## Configuración
 
 ### URL del API
-Ejemplo: `https://ventas.evircol.com/index.php/api/v1/sales`
+Ejemplo: `https://ventas.evircol.com/index.php/api/v1`
+
+**Nota**: El plugin automáticamente concatena `/sales` para facturas y `/items` para productos.
 
 ### API Key
 Tu clave de API para autenticación con el servicio.
@@ -39,13 +43,20 @@ Tu clave de API para autenticación con el servicio.
    - Selecciona el rango de fechas
    - Haz clic en "Buscar Facturas"
 
-3. **Ver Detalles**:
-   - Haz clic en "Ver Detalles" en cualquier factura
+3. **Consultar Productos**:
+   - Ve a "Facturas" > "Productos"
+   - Usa los filtros de búsqueda (nombre, categoría, fabricante)
+   - Haz clic en "Buscar Productos"
+
+4. **Ver Detalles**:
+   - Haz clic en "Ver Detalles" en cualquier factura o producto
    - Se abrirá un modal con información completa
 
 ## Estructura de Datos
 
-El plugin maneja la siguiente estructura de datos de las facturas:
+El plugin maneja las siguientes estructuras de datos:
+
+### Facturas
 
 ```typescript
 interface Sale {
@@ -74,6 +85,49 @@ interface Sale {
     profit: string;
     payments: Payment[];
     cart_items: CartItem[];
+}
+```
+
+### Productos
+
+```typescript
+interface Item {
+    item_id: number;
+    name: string;
+    item_number: string | null;
+    product_id: string | null;
+    size: string;
+    category: string;
+    category_id: number;
+    manufacturer: string;
+    manufacturer_id: number | null;
+    cost_price: string;
+    unit_price: string;
+    description: string;
+    long_description: string;
+    is_service: boolean;
+    is_serialized: boolean;
+    is_ebt_item: boolean;
+    is_ecommerce: boolean;
+    tax_included: boolean;
+    tags: string[];
+    locations: {
+        [locationId: string]: LocationDetails;
+    };
+}
+
+interface LocationDetails {
+    quantity: number;
+    location: string;
+    unit_price: string;
+    cost_price: string;
+    promo_price: string;
+    start_date: string | null;
+    end_date: string | null;
+    reorder_level: string;
+    replenish_level: string;
+    override_default_tax: boolean;
+    tax_class_id: number | null;
 }
 ```
 

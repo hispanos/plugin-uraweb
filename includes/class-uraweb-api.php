@@ -25,8 +25,8 @@ class Uraweb_API {
             return new WP_Error('no_config', 'La configuración del API no está completa. Ve a Configuración para configurar la URL y API Key.');
         }
         
-        // Construir URL con parámetros
-        $url = $this->api_url . '?start_date=' . urlencode($start_date) . '&end_date=' . urlencode($end_date);
+        // Construir URL con parámetros (concatenar /sales al final)
+        $url = rtrim($this->api_url, '/') . '/sales?start_date=' . urlencode($start_date) . '&end_date=' . urlencode($end_date);
         
         // Configurar headers
         $headers = array(
@@ -81,7 +81,7 @@ class Uraweb_API {
         }
         
         // Construir URL para obtener detalles específicos
-        $url = $this->api_url . '/' . urlencode($sale_id);
+        $url = rtrim($this->api_url, '/') . '/sales/' . urlencode($sale_id);
         
         $headers = array(
             'x-api-key: ' . $this->api_key,
@@ -150,6 +150,124 @@ class Uraweb_API {
         );
         
         return $formatted;
+    }
+    
+    /**
+     * Obtener productos desde la API
+     */
+    public function get_products($search_term = '', $category = '', $manufacturer = '') {
+        if (empty($this->api_url) || empty($this->api_key)) {
+            return new WP_Error('no_config', 'La configuración del API no está completa. Ve a Configuración para configurar la URL y API Key.');
+        }
+        
+        // Construir URL para productos (concatenar /items al final)
+        $url = rtrim($this->api_url, '/') . '/items';
+        
+        // Agregar parámetros de búsqueda si existen
+        $params = array();
+        if (!empty($search_term)) {
+            $params['search'] = $search_term;
+        }
+        if (!empty($category)) {
+            $params['category'] = $category;
+        }
+        if (!empty($manufacturer)) {
+            $params['manufacturer'] = $manufacturer;
+        }
+        
+        if (!empty($params)) {
+            $url .= '?' . http_build_query($params);
+        }
+        
+        // Configurar headers
+        $headers = array(
+            'x-api-key: ' . $this->api_key,
+            'Content-Type: application/json'
+        );
+        
+        // Realizar petición cURL
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        curl_close($ch);
+        
+        // Verificar errores de cURL
+        if ($curl_error) {
+            return new WP_Error('curl_error', 'Error de conexión: ' . $curl_error);
+        }
+        
+        // Verificar código de respuesta HTTP
+        if ($http_code !== 200) {
+            return new WP_Error('http_error', 'Error HTTP ' . $http_code . ': ' . $response);
+        }
+        
+        // Decodificar respuesta JSON
+        $data = json_decode($response);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return new WP_Error('json_error', 'Error al decodificar la respuesta JSON: ' . json_last_error_msg());
+        }
+        
+        // Verificar si la respuesta es un array
+        if (!is_array($data)) {
+            return new WP_Error('invalid_response', 'La respuesta del API no es un array válido.');
+        }
+        
+        return $data;
+    }
+    
+    /**
+     * Obtener estadísticas de los productos
+     */
+    public function get_product_stats($products) {
+        if (empty($products)) {
+            return array(
+                'total_products' => 0,
+                'active_products' => 0,
+                'services' => 0,
+                'with_inventory' => 0
+            );
+        }
+        
+        $active_products = 0;
+        $services = 0;
+        $with_inventory = 0;
+        
+        foreach ($products as $product) {
+            if (!$product->is_service) {
+                $active_products++;
+                
+                // Verificar si tiene inventario
+                if (!empty($product->locations)) {
+                    $has_stock = false;
+                    foreach ($product->locations as $location) {
+                        if (intval($location->quantity) > 0) {
+                            $has_stock = true;
+                            break;
+                        }
+                    }
+                    if ($has_stock) {
+                        $with_inventory++;
+                    }
+                }
+            } else {
+                $services++;
+            }
+        }
+        
+        return array(
+            'total_products' => count($products),
+            'active_products' => $active_products,
+            'services' => $services,
+            'with_inventory' => $with_inventory
+        );
     }
     
     /**

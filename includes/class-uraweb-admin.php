@@ -13,6 +13,7 @@ class Uraweb_Admin {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
         add_action('wp_ajax_uraweb_get_invoices', array($this, 'ajax_get_invoices'));
+        add_action('wp_ajax_uraweb_get_products', array($this, 'ajax_get_products'));
     }
     
     /**
@@ -28,6 +29,16 @@ class Uraweb_Admin {
             array($this, 'invoices_page'),
             'dashicons-cart',
             30
+        );
+        
+        // Submenú de productos
+        add_submenu_page(
+            'uraweb-invoices',
+            'Productos',
+            'Productos',
+            'manage_options',
+            'uraweb-products',
+            array($this, 'products_page')
         );
         
         // Submenú de configuración
@@ -126,6 +137,99 @@ class Uraweb_Admin {
     }
     
     /**
+     * Página de productos
+     */
+    public function products_page() {
+        ?>
+        <div class="wrap">
+            <h1>Productos Uraweb</h1>
+            
+            <div class="uraweb-filters">
+                <h3>Filtros de Búsqueda</h3>
+                <form method="post" id="uraweb-products-filter-form">
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="search_term">Buscar producto:</label>
+                            </th>
+                            <td>
+                                <input type="text" id="search_term" name="search_term" 
+                                       placeholder="Nombre, descripción o número de producto..." 
+                                       class="regular-text">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="category_filter">Categoría:</label>
+                            </th>
+                            <td>
+                                <select id="category_filter" name="category_filter">
+                                    <option value="">Todas las categorías</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">
+                                <label for="manufacturer_filter">Fabricante:</label>
+                            </th>
+                            <td>
+                                <select id="manufacturer_filter" name="manufacturer_filter">
+                                    <option value="">Todos los fabricantes</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                    <p class="submit">
+                        <input type="submit" name="filter_products" class="button-primary uraweb-btn" value="Buscar Productos">
+                    </p>
+                </form>
+            </div>
+            
+            <div id="uraweb-products-loading" class="uraweb-loading" style="display: none;">
+                Cargando productos...
+            </div>
+            
+            <div id="uraweb-products-results"></div>
+        </div>
+        
+        <script>
+        jQuery(document).ready(function($) {
+            $('#uraweb-products-filter-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                var searchTerm = $('#search_term').val();
+                var category = $('#category_filter').val();
+                var manufacturer = $('#manufacturer_filter').val();
+                
+                $('#uraweb-products-loading').show();
+                $('#uraweb-products-results').empty();
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'uraweb_get_products',
+                        search_term: searchTerm,
+                        category: category,
+                        manufacturer: manufacturer,
+                        nonce: '<?php echo wp_create_nonce('uraweb_nonce'); ?>'
+                    },
+                    success: function(response) {
+                        $('#uraweb-products-loading').hide();
+                        $('#uraweb-products-results').html(response);
+                    },
+                    error: function() {
+                        $('#uraweb-products-loading').hide();
+                        $('#uraweb-products-results').html('<p style="color: red;">Error al cargar los productos.</p>');
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
+    }
+    
+    /**
      * Página de configuración
      */
     public function settings_page() {
@@ -154,7 +258,7 @@ class Uraweb_Admin {
                             <input type="url" id="api_url" name="api_url" 
                                    value="<?php echo esc_attr($api_url); ?>" 
                                    class="regular-text" required>
-                            <p class="description">URL base del API de facturas (ej: https://ventas.evircol.com/index.php/api/v1/sales)</p>
+                            <p class="description">URL base del API (ej: https://ventas.evircol.com/index.php/api/v1)</p>
                         </td>
                     </tr>
                     <tr>
@@ -200,6 +304,36 @@ class Uraweb_Admin {
             echo '<p style="color: red;">Error: ' . $invoices->get_error_message() . '</p>';
         } else {
             $this->display_invoices($invoices);
+        }
+        
+        wp_die();
+    }
+    
+    /**
+     * AJAX handler para obtener productos
+     */
+    public function ajax_get_products() {
+        // Verificar nonce
+        if (!wp_verify_nonce($_POST['nonce'], 'uraweb_nonce')) {
+            wp_die('Error de seguridad');
+        }
+        
+        // Verificar permisos
+        if (!current_user_can('manage_options')) {
+            wp_die('Sin permisos');
+        }
+        
+        $search_term = sanitize_text_field($_POST['search_term']);
+        $category = sanitize_text_field($_POST['category']);
+        $manufacturer = sanitize_text_field($_POST['manufacturer']);
+        
+        $api = new Uraweb_API();
+        $products = $api->get_products($search_term, $category, $manufacturer);
+        
+        if (is_wp_error($products)) {
+            echo '<p style="color: red;">Error: ' . $products->get_error_message() . '</p>';
+        } else {
+            $this->display_products($products);
         }
         
         wp_die();
@@ -344,6 +478,162 @@ class Uraweb_Admin {
             }
             
             document.getElementById('uraweb-modal').style.display = 'block';
+        }
+        </script>
+        <?php
+    }
+    
+    /**
+     * Mostrar los productos en una tabla
+     */
+    private function display_products($products) {
+        if (empty($products)) {
+            echo '<div class="uraweb-no-results">No se encontraron productos con los criterios de búsqueda.</div>';
+            return;
+        }
+        
+        $api = new Uraweb_API();
+        $stats = $api->get_product_stats($products);
+        
+        ?>
+        <div class="uraweb-stats">
+            <div class="uraweb-stat-card">
+                <h4>Total Productos</h4>
+                <div class="stat-value"><?php echo $stats['total_products']; ?></div>
+            </div>
+            <div class="uraweb-stat-card">
+                <h4>Productos Activos</h4>
+                <div class="stat-value"><?php echo $stats['active_products']; ?></div>
+            </div>
+            <div class="uraweb-stat-card">
+                <h4>Servicios</h4>
+                <div class="stat-value"><?php echo $stats['services']; ?></div>
+            </div>
+            <div class="uraweb-stat-card">
+                <h4>Con Inventario</h4>
+                <div class="stat-value"><?php echo $stats['with_inventory']; ?></div>
+            </div>
+        </div>
+        
+        <div class="uraweb-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Fabricante</th>
+                        <th>Precio</th>
+                        <th>Costo</th>
+                        <th>Stock</th>
+                        <th>Tipo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($products as $product): ?>
+                    <tr>
+                        <td><strong><?php echo esc_html($product->item_id); ?></strong></td>
+                        <td>
+                            <strong><?php echo esc_html($product->name); ?></strong>
+                            <?php if (!empty($product->item_number)): ?>
+                                <br><small>#<?php echo esc_html($product->item_number); ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td><?php echo esc_html($product->category); ?></td>
+                        <td><?php echo esc_html($product->manufacturer); ?></td>
+                        <td><strong>$<?php echo number_format(floatval($product->unit_price), 2); ?></strong></td>
+                        <td>$<?php echo number_format(floatval($product->cost_price), 2); ?></td>
+                        <td>
+                            <?php 
+                            $total_stock = 0;
+                            if (!empty($product->locations)) {
+                                foreach ($product->locations as $location) {
+                                    $total_stock += intval($location->quantity);
+                                }
+                            }
+                            echo $total_stock;
+                            ?>
+                        </td>
+                        <td>
+                            <?php if ($product->is_service): ?>
+                                <span class="uraweb-status-service">Servicio</span>
+                            <?php else: ?>
+                                <span class="uraweb-status-product">Producto</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <button class="uraweb-btn" onclick="urawebViewProductDetails('<?php echo esc_js($product->item_id); ?>')">
+                                Ver Detalles
+                            </button>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="uraweb-product-modal" class="uraweb-modal">
+            <div class="uraweb-modal-content">
+                <h3>Detalles del Producto</h3>
+                <div id="uraweb-product-modal-content"></div>
+                <button class="uraweb-btn uraweb-btn-secondary" onclick="document.getElementById('uraweb-product-modal').style.display='none'">Cerrar</button>
+            </div>
+        </div>
+        
+        <script>
+        function urawebViewProductDetails(itemId) {
+            // Buscar el producto en los datos actuales
+            var product = null;
+            <?php foreach ($products as $product): ?>
+            if (<?php echo $product->item_id; ?> == itemId) {
+                product = <?php echo json_encode($product); ?>;
+            }
+            <?php endforeach; ?>
+            
+            if (product) {
+                var content = '<div class="uraweb-details">';
+                content += '<h4>Información General</h4>';
+                content += '<table>';
+                content += '<tr><th>ID:</th><td>' + product.item_id + '</td></tr>';
+                content += '<tr><th>Nombre:</th><td>' + product.name + '</td></tr>';
+                content += '<tr><th>Número de Producto:</th><td>' + (product.item_number || 'N/A') + '</td></tr>';
+                content += '<tr><th>Categoría:</th><td>' + product.category + '</td></tr>';
+                content += '<tr><th>Fabricante:</th><td>' + product.manufacturer + '</td></tr>';
+                content += '<tr><th>Precio Unitario:</th><td>$' + parseFloat(product.unit_price).toFixed(2) + '</td></tr>';
+                content += '<tr><th>Precio de Costo:</th><td>$' + parseFloat(product.cost_price).toFixed(2) + '</td></tr>';
+                content += '<tr><th>Tipo:</th><td>' + (product.is_service ? 'Servicio' : 'Producto') + '</td></tr>';
+                content += '<tr><th>Descripción:</th><td>' + (product.description || 'N/A') + '</td></tr>';
+                content += '</table>';
+                
+                if (product.locations && Object.keys(product.locations).length > 0) {
+                    content += '<h4>Inventario por Ubicación</h4>';
+                    content += '<table>';
+                    content += '<tr><th>Ubicación</th><th>Cantidad</th><th>Precio Unit.</th><th>Precio Costo</th></tr>';
+                    for (var locationId in product.locations) {
+                        var location = product.locations[locationId];
+                        content += '<tr>';
+                        content += '<td>' + location.location + '</td>';
+                        content += '<td>' + location.quantity + '</td>';
+                        content += '<td>$' + parseFloat(location.unit_price).toFixed(2) + '</td>';
+                        content += '<td>$' + parseFloat(location.cost_price).toFixed(2) + '</td>';
+                        content += '</tr>';
+                    }
+                    content += '</table>';
+                }
+                
+                if (product.tags && product.tags.length > 0) {
+                    content += '<h4>Etiquetas</h4>';
+                    content += '<p>' + product.tags.join(', ') + '</p>';
+                }
+                
+                content += '</div>';
+                document.getElementById('uraweb-product-modal-content').innerHTML = content;
+            } else {
+                document.getElementById('uraweb-product-modal-content').innerHTML = '<p>No se encontraron detalles para este producto.</p>';
+            }
+            
+            document.getElementById('uraweb-product-modal').style.display = 'block';
         }
         </script>
         <?php
